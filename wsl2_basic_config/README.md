@@ -1,37 +1,61 @@
-# System Setup Script
+# WSL2 Basic Configuration
 
-This repository contains a Bash script for automating the setup of a Linux environment. The script is designed to run on Debian-based distributions and automates the installation of essential packages, Python libraries, and development tools such as AWS CLI, Docker, and Terraform.
+This directory contains scripts and configuration files to set up a basic working environment within the Windows Subsystem for Linux (WSL).
 
-## Prerequisites
+## Contents
 
-Before running the script, ensure that you have a Debian-based Linux distribution. This script has been tested on Ubuntu.
+- `.bashrc_extra` - Contains additional bash shell configuration commands.
+- `config.sh` - A shell script to automate the setup of your WSL environment.
+- `py_libraries` - A list of Python libraries to be installed.
+- `req_packages` - A file listing required system packages.
 
-## Features
+## Configuration Steps
 
-- Automatic update of package listings.
-- Installation of required packages listed in a file.
-- Installation of required Python libraries listed in a file.
-- Installation of AWS CLI v2.
-- Installation of Docker and adding the user to the Docker group.
-- Installation of Terraform.
-- Update of the user's `.bashrc` with custom configuration from `.bashrc_extra`.
+To properly set up your WSL environment using the provided scripts and configuration files, follow these steps:
 
-## Usage
+1. Open your WSL terminal and navigate to the directory where you have placed these files.
 
-To use the script, follow these steps:
+2. Ensure that `config.sh` is executable:
 
-1. Clone the repository or download the `setup.sh` script to your local machine.
-2. Make sure you have the `req_packages`, `py_libraries` and `.bashrc_extra` files in the same directory as the script. These files should contain the list of packages and Python libraries you wish to install, respectively.
-3. Give the script execution permissions:
-
-    ```sh
-    chmod +x setup.sh
+    ```bash
+    chmod +x config.sh
     ```
 
-4. Run the script:
+3. Run `config.sh` to start the configuration process:
 
-    ```sh
-    ./setup.sh
+    ```bash
+    ./config.sh
     ```
 
-5. The script will ask for your user password for executing commands with `sudo`.
+   This script will source the `.bashrc_extra` file to update your shell configuration and install the packages listed in `req_packages` and `py_libraries`.
+
+4. Once the script completes, you may need to restart your terminal or source your `.bashrc` to apply the changes:
+
+    ```bash
+    source ~/.bashrc
+    ```
+
+## Customization
+
+Feel free to modify the `config.sh`, `.bashrc_extra`, `py_libraries`, and `req_packages` files to suit your specific needs. Add or remove packages and configurations as needed.
+
+## Troubleshooting
+
+If you encounter any issues while running the scripts, ensure that:
+
+- You have the necessary permissions to execute the scripts.
+- Your WSL distribution is up-to-date.
+- You are connected to the internet, as some scripts may require downloading packages from online repositories.
+
+## Contributing
+
+Contributions to improve the configuration or add more utilities are welcome. If you have any suggestions or improvements, please fork the repository, make your changes, and submit a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file in the root directory for details.
+
+## Acknowledgments
+
+- Thanks to all the contributors who have helped to enhance this WSL configuration.
+- Special thanks to the creators and maintainers of the packages and tools included in this setup.
