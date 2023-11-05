@@ -8,7 +8,7 @@ req_packages="req_packages"
 py_libraries="py_libraries"
 
 # Update/Download package information from all configured sources
-sudo apt-get update
+sudo apt-get update 2>&1 >/dev/null
 
 # Checking if the required packages are installed
 missing_packages=()
@@ -57,7 +57,6 @@ install_docker() {
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
     sudo usermod -aG docker "$USER"
     echo "Docker installed. Please log out and log back in for the group change to take effect."
-    # No need for 'newgrp docker' as it might not work as expected in scripts
   fi
   docker --version
 }
@@ -75,7 +74,7 @@ install_terraform() {
 }
 
 install_aws_cli
-install_docker  # Uncomment this line if you want to install Docker.
+install_docker
 install_terraform
 
 # Append custom bashrc content if not already present
