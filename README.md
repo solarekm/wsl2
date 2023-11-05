@@ -1,4 +1,4 @@
-# wsl2-basic-configuration
+# WSL2 - Basic Configuration
 
 To run the SetupWSL2.ps1 script, you need to:
 1. Open PowerShell as an administrator.
