@@ -18,7 +18,7 @@ This repository holds a set of scripts designed to prepare a Windows system for 
 1. Clone the repository or download the ZIP file and extract it on your local machine.
 
     ```shell
-    git clone https://github.com/<your-username>/wsl2.git
+    git clone https://github.com/solarekm/wsl2.git
     ```
 
 2. Navigate to the directory containing `SetupWSL2.ps1`.
