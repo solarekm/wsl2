@@ -1,0 +1,6 @@
+ansible
+ansible-lint
+argcomplete
+boto3
+pywinrm
+requests
