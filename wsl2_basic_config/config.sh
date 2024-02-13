@@ -43,6 +43,17 @@ install_aws_cli() {
   aws --version
 }
 
+# Function to install Session Manager plugin
+install_session_manager_plugin() {
+  if ! command -v session-manager-plugin &> /dev/null; then
+    echo "Installing Session Manager plugin..."
+    curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "/tmp/session-manager-plugin.deb"
+    sudo dpkg -i /tmp/session-manager-plugin.deb
+    rm -f /tmp/session-manager-plugin.deb
+  fi
+  session-manager-plugin
+}
+
 # Function to install Docker
 install_docker() {
   if ! command -v docker &> /dev/null; then
@@ -74,6 +85,7 @@ install_terraform() {
 }
 
 install_aws_cli
+install_session_manager_plugin
 install_docker
 install_terraform
 
