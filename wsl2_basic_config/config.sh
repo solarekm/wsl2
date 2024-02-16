@@ -102,3 +102,6 @@ if [ -f "$bashrc_extra" ]; then
 fi' >> "$bashrc"
   fi
 fi
+
+git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
+echo 'export PATH=$PATH:$HOME/.tfenv/bin' >> ~/.bashrc_extra
