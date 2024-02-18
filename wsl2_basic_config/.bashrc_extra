@@ -65,3 +65,7 @@ if [ -d "$sshkeys_dir" ]; then
 else
     echo "The directory $sshkeys_dir does not exist."
 fi
+
+if [[ ":$PATH:" != *":$HOME/.tfenv/bin:"* ]]; then
+    export PATH="$PATH:$HOME/.tfenv/bin"
+fi

@@ -3,6 +3,20 @@
 # Exit on error
 set -e
 
+# Append custom bashrc content if not already present
+bashrc_extra=".bashrc_extra"
+bashrc="$HOME/.bashrc"
+
+if [ -f "$bashrc_extra" ]; then
+  cp -f "$bashrc_extra" "$HOME"
+  if ! grep -q ".bashrc_extra" "$bashrc"; then
+    echo '' >> "$bashrc"
+    echo 'if [ -f ~/.bashrc_extra ]; then
+    . ~/.bashrc_extra
+    fi' >> "$bashrc"
+  fi
+fi
+
 # File with package names
 req_packages="req_packages"
 py_libraries="py_libraries"
@@ -67,6 +81,8 @@ install_docker() {
     sudo apt-get update
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
     sudo usermod -aG docker "$USER"
+    sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+    sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
     echo "Docker installed. Please log out and log back in for the group change to take effect."
   fi
   docker --version
@@ -87,20 +103,6 @@ install_terraform() {
 install_aws_cli
 install_session_manager_plugin
 install_docker
-install_terraform
-
-# Append custom bashrc content if not already present
-bashrc_extra=".bashrc_extra"
-bashrc="$HOME/.bashrc"
-
-if [ -f "$bashrc_extra" ]; then
-  cp -f "$bashrc_extra" "$HOME"
-  if ! grep -q ".bashrc_extra" "$bashrc"; then
-    echo '' >> "$bashrc"
-    echo 'if [ -f ~/.bashrc_extra ]; then
-  . ~/.bashrc_extra
-fi' >> "$bashrc"
-  fi
-fi
+# install_terraform
 
 git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
