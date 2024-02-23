@@ -17,6 +17,8 @@ if [ -f "$bashrc_extra" ]; then
   fi
 fi
 
+source ~/.bashrc
+
 # File with package names
 req_packages="req_packages"
 py_libraries="py_libraries"
