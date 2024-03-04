@@ -48,7 +48,7 @@ done < "$py_libraries"
 # Function to install AWS CLI
 install_aws_cli() {
   if ! command -v aws &> /dev/null; then
-    echo "\e[32mInstalling AWS CLI...\e[0m"
+    echo -e "\e[32mInstalling AWS CLI...\e[0m"
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
     unzip -q /tmp/awscliv2.zip -d /tmp
     sudo /tmp/aws/install
@@ -60,7 +60,7 @@ install_aws_cli() {
 # Function to install Session Manager plugin
 install_session_manager_plugin() {
   if ! command -v session-manager-plugin &> /dev/null; then
-    echo "\e[32mInstalling Session Manager plugin...\e[0m"
+    echo -e "\e[32mInstalling Session Manager plugin...\e[0m"
     curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "/tmp/session-manager-plugin.deb"
     sudo dpkg -i /tmp/session-manager-plugin.deb
     rm -f /tmp/session-manager-plugin.deb
@@ -72,35 +72,42 @@ install_session_manager_plugin() {
 install_docker() {
   if ! command -v docker &> /dev/null; then
     # Add Docker's official GPG key:
-    echo "\e[32mInstalling Docker...\e[0m"
+    echo -e "\e[32mInstalling Docker...\e[0m"
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
     # Add the repository to Apt sources:
     echo \
       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update
     # Install the Docker packages
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-    sudo usermod -aG docker $USER
-    newgrp docker
+  fi
+  echo "$(tput setaf 4)$(docker version)$(tput sgr0)"
+}
+
+# Post-installation steps for Docker Engine
+post_install_docker() {
+  if [ ! -d "$HOME/.docker" ]; then
     mkdir -p $HOME/.docker
     sudo chown $USER:$USER /home/$USER/.docker -R
     sudo chmod g+rwx $HOME/.docker -R
+  fi
+
+  if ! groups $USER | grep &>/dev/null '\bdocker\b'; then
+    sudo usermod -aG docker $USER
+  fi
     sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
     sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-  fi
-  # sudo service docker start
-  # docker run --rm hello-world
-  echo "$(tput setaf 4)$(docker version)$(tput sgr0)"
+    # sudo service docker start
+    # docker run --rm hello-world
 }
 
 # Function to install Terraform
 install_terraform() {
   if ! command -v terraform &> /dev/null; then
-    echo "Installing Terraform..."
+    echo -e "\e[32mInstalling Terraform...\e[0m"
     wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
     echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
     sudo apt-get update
@@ -133,6 +140,7 @@ git_configuration() {
 install_aws_cli
 install_session_manager_plugin
 install_docker
+# post_install_docker
 # install_terraform
 git_configuration
 
