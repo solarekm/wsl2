@@ -112,7 +112,7 @@ git_configuration() {
       git config --global user.name "$name $last_name"
       git config --global user.email "$email"
 
-      echo -e "\e[34monfiguration complete. The user data in GIT has been updated:\e[0m"
+      echo -e "\e[34mConfiguration complete. The user data in GIT has been updated:\e[0m"
       echo "$(tput setaf 4)$(git config --global --list | grep user)$(tput sgr0)"
   else
       echo -e "\e[34mThe user data in GIT is already configured:\e[0m"
