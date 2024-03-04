@@ -80,7 +80,11 @@ install_docker() {
       sudo tee /etc/apt/sources.list.d/docker.list
     sudo apt-get update
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-    sudo usermod -aG docker "$USER"
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
+    newgrp docker
+    sudo chown $USER:$USER /home/$USER/.docker -R
+    sudo chmod g+rwx $HOME/.docker -R
     sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
     sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
   fi
