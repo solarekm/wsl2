@@ -95,3 +95,6 @@ fi
 if [[ ":$PATH:" != *":$HOME/.tfenv/bin:"* ]]; then
     export PATH="$PATH:$HOME/.tfenv/bin"
 fi
+
+# Starting docker
+nohup sudo -b dockerd < /dev/null > /dev/null 2>&1

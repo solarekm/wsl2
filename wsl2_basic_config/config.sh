@@ -71,12 +71,12 @@ install_session_manager_plugin() {
 # Function to install Docker
 install_docker() {
   if ! command -v docker &> /dev/null; then
-    # Add Docker's official GPG key:
+    # Add Docker's official GPG key
     echo -e "\e[32mInstalling Docker...\e[0m"
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
-    # Add the repository to Apt sources:
+    # Add the repository to Apt sources
     echo \
       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
       $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -84,7 +84,7 @@ install_docker() {
     # Install the Docker packages
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
   fi
-  echo "$(tput setaf 4)$(docker version)$(tput sgr0)"
+  echo "$(tput setaf 4)$(docker --version)$(tput sgr0)"
 }
 
 # Post-installation steps for Docker Engine
@@ -100,8 +100,6 @@ post_install_docker() {
   fi
     sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
     sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-    # sudo service docker start
-    # docker run --rm hello-world
 }
 
 # Function to install Terraform
@@ -120,7 +118,7 @@ install_terraform() {
 git_configuration() {
   # Checking whether user data is already set up
   if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then
-      echo "No user data configuration in GIT."
+      echo -e "\e[32mNo user data configuration in GIT.\e[0m"
       read -p "Enter your name: " name
       read -p "Enter your last name: " last_name
       read -p "Enter your e-mail address: " email
@@ -140,7 +138,7 @@ git_configuration() {
 install_aws_cli
 install_session_manager_plugin
 install_docker
-# post_install_docker
+post_install_docker
 # install_terraform
 git_configuration
 
