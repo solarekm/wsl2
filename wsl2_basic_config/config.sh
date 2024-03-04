@@ -71,24 +71,29 @@ install_session_manager_plugin() {
 # Function to install Docker
 install_docker() {
   if ! command -v docker &> /dev/null; then
+    # Add Docker's official GPG key:
     echo "\e[32mInstalling Docker...\e[0m"
     sudo install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    # Add the repository to Apt sources:
     echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | \
-      sudo tee /etc/apt/sources.list.d/docker.list
-    sudo apt-get update
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+    # Install the Docker packages
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-    sudo groupadd docker
     sudo usermod -aG docker $USER
     newgrp docker
+    mkdir -p $HOME/.docker
     sudo chown $USER:$USER /home/$USER/.docker -R
     sudo chmod g+rwx $HOME/.docker -R
     sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
     sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
   fi
-  echo "$(tput setaf 4)$(docker --version)$(tput sgr0)"
+  # docker run --rm hello-world
+  echo "$(tput setaf 4)$(docker version)$(tput sgr0)"
 }
 
 # Function to install Terraform
