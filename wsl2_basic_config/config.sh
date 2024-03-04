@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Exit on error
+# Exit on error.
 set -e
 
-# Append custom bashrc content if not already present
+# Append custom bashrc content if not already present.
 bashrc_extra=".bashrc_extra"
 bashrc="$HOME/.bashrc"
 
@@ -17,14 +17,14 @@ if [ -f "$bashrc_extra" ]; then
   fi
 fi
 
-# File with package names
+# File with package names.
 req_packages="req_packages"
 py_libraries="py_libraries"
 
-# Update/Download package information from all configured sources
+# Update/Download package information from all configured sources.
 sudo apt-get update 2>&1 >/dev/null
 
-# Checking if the required packages are installed
+# Checking if the required packages are installed.
 missing_packages=()
 while IFS= read -r req_package || [[ -n "$req_package" ]]; do
   if [ -n "$req_package" ] && ! dpkg -l | grep -qw "$req_package"; then
@@ -37,7 +37,7 @@ if [ ${#missing_packages[@]} -gt 0 ]; then
   sudo apt-get install -y "${missing_packages[@]}"
 fi
 
-# Checking if the required python libraries are installed
+# Checking if the required python libraries are installed.
 while IFS= read -r py_library || [[ -n "$py_library" ]]; do
   if [ -n "$py_library" ] && ! pip3 show "$py_library" > /dev/null 2>&1; then
     echo "Library $py_library is not installed. Attempting to install it..."
@@ -45,7 +45,7 @@ while IFS= read -r py_library || [[ -n "$py_library" ]]; do
   fi
 done < "$py_libraries"
 
-# Function to install AWS CLI
+# Function to install AWS CLI.
 install_aws_cli() {
   if ! command -v aws &> /dev/null; then
     echo -e "\e[32mInstalling AWS CLI...\e[0m"
@@ -57,7 +57,7 @@ install_aws_cli() {
   echo "$(tput setaf 4)$(aws --version)$(tput sgr0)"
 }
 
-# Function to install Session Manager plugin
+# Function to install Session Manager plugin.
 install_session_manager_plugin() {
   if ! command -v session-manager-plugin &> /dev/null; then
     echo -e "\e[32mInstalling Session Manager plugin...\e[0m"
@@ -68,26 +68,26 @@ install_session_manager_plugin() {
   echo "$(tput setaf 4)$(session-manager-plugin)$(tput sgr0)"
 }
 
-# Function to install Docker
+# Function to install Docker.
 install_docker() {
   if ! command -v docker &> /dev/null; then
-    # Add Docker's official GPG key
+    # Add Docker's official GPG key.
     echo -e "\e[32mInstalling Docker...\e[0m"
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
-    # Add the repository to Apt sources
+    # Add the repository to Apt sources.
     echo \
       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
       $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update
-    # Install the Docker packages
+    # Install the Docker packages.
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
   fi
   echo "$(tput setaf 4)$(docker --version)$(tput sgr0)"
 }
 
-# Post-installation steps for Docker Engine
+# Post-installation steps for Docker Engine.
 post_install_docker() {
   if [ ! -d "$HOME/.docker" ]; then
     mkdir -p $HOME/.docker
@@ -102,7 +102,7 @@ post_install_docker() {
     sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 }
 
-# Function to install Terraform
+# Function to install Terraform.
 install_terraform() {
   if ! command -v terraform &> /dev/null; then
     echo -e "\e[32mInstalling Terraform...\e[0m"
@@ -114,16 +114,16 @@ install_terraform() {
   echo "$(tput setaf 4)$(terraform --version)$(tput sgr0)"
 }
 
-# Function to configure git
+# Function to configure git.
 git_configuration() {
-  # Checking whether user data is already set up
+  # Checking whether user data is already set up.
   if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then
       echo -e "\e[32mNo user data configuration in GIT.\e[0m"
       read -p "Enter your name: " name
       read -p "Enter your last name: " last_name
       read -p "Enter your e-mail address: " email
 
-      # Configuring user data in GIT
+      # Configuring user data in GIT.
       git config --global user.name "$name $last_name"
       git config --global user.email "$email"
 
@@ -142,12 +142,15 @@ post_install_docker
 # install_terraform
 git_configuration
 
-# Cloning the repository "Terraform version manager"
+# Cloning the repository "Terraform version manager".
 if [ -d ~/.tfenv ]; then
   echo -e "\e[34mRepository Terraform version manager already exists.\e[0m"
 else
   git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
 fi
+
+# Enable passwoordless for sudo.
+sudo sed -i '/^%sudo.*ALL=(ALL:ALL) ALL$/ s/ALL$/NOPASSWD:ALL/' /etc/sudoers
 
 echo
 echo -e "\e[31mThe basic configuration of WSL2 is now complete.\e[0m"
