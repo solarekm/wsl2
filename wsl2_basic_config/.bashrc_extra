@@ -52,12 +52,34 @@ complete -C '/usr/local/bin/aws_completer' aws
 # Set default browser to use wslview (opens URLs in Windows default browser)
 export BROWSER="wslview"
 
-# Modern CLI tool aliases and configurations
-alias ll='exa -la --git'
-alias ls='exa'
-alias cat='batcat'
-alias find='fdfind'
-alias grep='rg'
+# Modern CLI tool aliases and configurations - dynamic based on available tools
+# Check for modern ls alternatives
+if command -v exa &> /dev/null; then
+    alias ll='exa -la --git'
+    alias ls='exa'
+elif command -v eza &> /dev/null; then
+    alias ll='eza -la --git'
+    alias ls='eza'
+fi
+
+# Check for modern cat alternatives
+if command -v bat &> /dev/null; then
+    alias cat='bat'
+elif command -v batcat &> /dev/null; then
+    alias cat='batcat'
+fi
+
+# Check for modern find alternatives
+if command -v fdfind &> /dev/null; then
+    alias find='fdfind'
+elif command -v fd &> /dev/null; then
+    alias find='fd'
+fi
+
+# Check for modern grep alternatives
+if command -v rg &> /dev/null; then
+    alias grep='rg'
+fi
 
 sshkeys_dir="$HOME/.ssh"
 

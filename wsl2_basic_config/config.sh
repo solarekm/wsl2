@@ -25,6 +25,28 @@ check_internet() {
   echo -e "${GREEN}Internet connection confirmed.${NC}"
 }
 
+# Function to check if package is available in repositories
+check_package_availability() {
+  local packages=("$@")
+  local unavailable=()
+  
+  echo -e "${BLUE}Checking package availability...${NC}"
+  
+  for package in "${packages[@]}"; do
+    if ! apt-cache show "$package" &> /dev/null; then
+      unavailable+=("$package")
+    fi
+  done
+  
+  if [ ${#unavailable[@]} -gt 0 ]; then
+    echo -e "${YELLOW}The following packages are not available in repositories:${NC}"
+    printf '%s\n' "${unavailable[@]}"
+    echo -e "${BLUE}The script will try alternatives where available.${NC}"
+  else
+    echo -e "${GREEN}All packages are available in repositories.${NC}"
+  fi
+}
+
 # Function to download with retry
 download_with_retry() {
   local url="$1"
@@ -46,6 +68,47 @@ download_with_retry() {
   
   echo -e "${RED}Failed to download $url after $max_attempts attempts.${NC}"
   return 1
+}
+
+# Function to safely install packages with fallbacks
+install_package_safely() {
+  local package="$1"
+  local fallback="$2"
+  local description="$3"
+  
+  echo -e "${BLUE}Installing $package ($description)...${NC}"
+  
+  # Check if package is available
+  if apt-cache show "$package" &> /dev/null; then
+    if sudo apt-get install -y "$package"; then
+      echo -e "${GREEN}Successfully installed $package${NC}"
+      return 0
+    else
+      echo -e "${YELLOW}Failed to install $package, trying alternative...${NC}"
+    fi
+  else
+    echo -e "${YELLOW}Package $package not found in repositories${NC}"
+  fi
+  
+  # Try fallback if provided
+  if [ -n "$fallback" ]; then
+    echo -e "${BLUE}Trying fallback: $fallback${NC}"
+    if apt-cache show "$fallback" &> /dev/null; then
+      if sudo apt-get install -y "$fallback"; then
+        echo -e "${GREEN}Successfully installed fallback $fallback${NC}"
+        return 0
+      else
+        echo -e "${RED}Failed to install both $package and $fallback${NC}"
+        return 1
+      fi
+    else
+      echo -e "${RED}Fallback package $fallback also not found${NC}"
+      return 1
+    fi
+  else
+    echo -e "${RED}No fallback available for $package${NC}"
+    return 1
+  fi
 }
 
 # Function to copy and configure .bashrc_extra
@@ -191,11 +254,21 @@ git_configuration() {
 
 # Update/Download package information from all configured sources.
 sudo apt-get update && sudo apt-get upgrade -y 2>&1 >/dev/null
+
+# Check availability of modern CLI tools before installation
+check_package_availability "bat" "exa" "eza" "fd-find" "fd" "ripgrep" "fzf" "tree" "htop" "neofetch"
+
 sudo apt-get install -y unzip python3-pip jq wslu keychain curl wget git
 
-# Install modern CLI tools for better developer experience
-echo -e "${GREEN}Installing modern CLI tools...${NC}"
-sudo apt-get install -y bat exa fd-find ripgrep fzf tree htop neofetch
+# Install packages safely with fallbacks
+install_package_safely "bat" "batcat" "syntax highlighting cat replacement"
+install_package_safely "exa" "eza" "modern ls replacement" 
+install_package_safely "fd-find" "fd" "fast find replacement"
+install_package_safely "ripgrep" "rg" "fast grep replacement"
+install_package_safely "fzf" "" "fuzzy finder"
+install_package_safely "tree" "" "directory tree viewer"
+install_package_safely "htop" "" "interactive process viewer"
+install_package_safely "neofetch" "" "system information tool"
 
 # Update pip to the latest version with --break-system-packages
 sudo rm /usr/lib/python3.12/EXTERNALLY-MANAGED
