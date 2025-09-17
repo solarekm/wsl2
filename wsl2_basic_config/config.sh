@@ -3,76 +3,118 @@
 # Exit on error.
 set -e
 
-# Append custom bashrc content if not already present.
-bashrc_extra=".bashrc_extra"
-bashrc="$HOME/.bashrc"
+# Setup logging
+LOG_FILE="$HOME/wsl2_setup.log"
+exec > >(tee -a "$LOG_FILE")
+exec 2>&1
 
-if [ -f "$bashrc_extra" ]; then
-  cp -f "$bashrc_extra" "$HOME"
-  if ! grep -q ".bashrc_extra" "$bashrc"; then
-    echo '' >> "$bashrc"
-    echo 'if [ -f ~/.bashrc_extra ]; then
+# Colors for messages
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+BLUE="\e[34m"
+NC="\e[0m" # No Color
+
+# Function to check internet connectivity
+check_internet() {
+  echo -e "${BLUE}Checking internet connectivity...${NC}"
+  if ! ping -c 1 8.8.8.8 &> /dev/null; then
+    echo -e "${RED}No internet connection. Please check your network and try again.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}Internet connection confirmed.${NC}"
+}
+
+# Function to download with retry
+download_with_retry() {
+  local url="$1"
+  local output="$2"
+  local max_attempts=3
+  local attempt=1
+  
+  while [ $attempt -le $max_attempts ]; do
+    echo -e "${BLUE}Downloading $url (attempt $attempt/$max_attempts)...${NC}"
+    if curl -fsSL "$url" -o "$output"; then
+      echo -e "${GREEN}Download successful.${NC}"
+      return 0
+    else
+      echo -e "${YELLOW}Download failed. Retrying in 5 seconds...${NC}"
+      sleep 5
+      ((attempt++))
+    fi
+  done
+  
+  echo -e "${RED}Failed to download $url after $max_attempts attempts.${NC}"
+  return 1
+}
+
+# Function to copy and configure .bashrc_extra
+copy_bashrc_extra() {
+  local bashrc_extra=".bashrc_extra"
+  local bashrc="$HOME/.bashrc"
+  
+  if [ -f "$bashrc_extra" ]; then
+    echo -e "${GREEN}Copying the extended bashrc...${NC}"
+    cp -f "$bashrc_extra" "$HOME/.bashrc_extra"
+    
+    # Check whether the operation was successful
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}The file was copied correctly to $HOME/.bashrc_extra.${NC}"
+      
+      # Add sourcing to .bashrc if not already present
+      if ! grep -q ".bashrc_extra" "$bashrc"; then
+        echo '' >> "$bashrc"
+        echo 'if [ -f ~/.bashrc_extra ]; then
     . ~/.bashrc_extra
-    fi' >> "$bashrc"
+fi' >> "$bashrc"
+        echo -e "${GREEN}Added .bashrc_extra sourcing to .bashrc${NC}"
+      fi
+    else
+      echo -e "${RED}An error occurred while copying the file.${NC}"
+      return 1
+    fi
+  else
+    echo -e "${YELLOW}File $bashrc_extra not found in current directory.${NC}"
+    return 1
   fi
-fi
-
-# File with package names.
-req_packages="req_packages"
-py_libraries="py_libraries"
-
-# Update/Download package information from all configured sources.
-sudo apt-get update 2>&1 >/dev/null
-
-# Checking if the required packages are installed.
-missing_packages=()
-while IFS= read -r req_package || [[ -n "$req_package" ]]; do
-  if [ -n "$req_package" ] && ! dpkg -l | grep -qw "$req_package"; then
-    missing_packages+=("$req_package")
-  fi
-done < "$req_packages"
-
-if [ ${#missing_packages[@]} -gt 0 ]; then
-  echo "The following packages are missing and will be installed: ${missing_packages[*]}"
-  sudo apt-get install -y "${missing_packages[@]}"
-fi
-
-# Checking if the required python libraries are installed.
-while IFS= read -r py_library || [[ -n "$py_library" ]]; do
-  if [ -n "$py_library" ] && ! pip3 show "$py_library" > /dev/null 2>&1; then
-    echo "Library $py_library is not installed. Attempting to install it..."
-    pip3 install "$py_library"
-  fi
-done < "$py_libraries"
+}
 
 # Function to install AWS CLI.
 install_aws_cli() {
   if ! command -v aws &> /dev/null; then
-    echo -e "\e[32mInstalling AWS CLI...\e[0m"
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-    unzip -q /tmp/awscliv2.zip -d /tmp
-    sudo /tmp/aws/install
-    rm -rf /tmp/aws /tmp/awscliv2.zip
+    echo -e "${GREEN}Installing AWS CLI...${NC}"
+    if download_with_retry "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" "/tmp/awscliv2.zip"; then
+      unzip -q /tmp/awscliv2.zip -d /tmp
+      sudo /tmp/aws/install
+      rm -rf /tmp/aws /tmp/awscliv2.zip
+    else
+      echo -e "${RED}Failed to install AWS CLI${NC}"
+      return 1
+    fi
   fi
-  echo "$(tput setaf 4)$(aws --version)$(tput sgr0)"
+  echo -e "${BLUE}$(aws --version)${NC}"
 }
 
 # Function to install Session Manager plugin.
 install_session_manager_plugin() {
   if ! command -v session-manager-plugin &> /dev/null; then
-    echo -e "\e[32mInstalling Session Manager plugin...\e[0m"
-    curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "/tmp/session-manager-plugin.deb"
-    sudo dpkg -i /tmp/session-manager-plugin.deb
-    rm -f /tmp/session-manager-plugin.deb
+    echo -e "${GREEN}Installing Session Manager plugin...${NC}"
+    if download_with_retry "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" "/tmp/session-manager-plugin.deb"; then
+      sudo dpkg -i /tmp/session-manager-plugin.deb
+      rm -f /tmp/session-manager-plugin.deb
+    else
+      echo -e "${RED}Failed to install Session Manager plugin${NC}"
+      return 1
+    fi
   fi
-  echo "$(tput setaf 4)$(session-manager-plugin)$(tput sgr0)"
+  echo -e "${BLUE}$(session-manager-plugin)${NC}"
 }
 
 # Function to install Docker.
 install_docker() {
   if ! command -v docker &> /dev/null; then
     # Add Docker's official GPG key.
-    echo -e "\e[32mInstalling Docker...\e[0m"
+    echo -e "${GREEN}Installing Docker...${NC}"
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -84,7 +126,7 @@ install_docker() {
     # Install the Docker packages.
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
   fi
-  echo "$(tput setaf 4)$(docker --version)$(tput sgr0)"
+  echo -e "${BLUE}$(docker --version)${NC}"
 }
 
 # Post-installation steps for Docker Engine.
@@ -94,31 +136,30 @@ post_install_docker() {
     sudo chown $USER:$USER /home/$USER/.docker -R
     sudo chmod g+rwx $HOME/.docker -R
   fi
-
+  # Add your user to the docker group.
   if ! groups $USER | grep &>/dev/null '\bdocker\b'; then
     sudo usermod -aG docker $USER
   fi
-    sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
-    sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+  # Configure Docker to start on boot with systemd
+  sudo systemctl enable docker.service
+  sudo systemctl enable containerd.service
 }
 
-# Function to install Terraform.
-install_terraform() {
-  if ! command -v terraform &> /dev/null; then
-    echo -e "\e[32mInstalling Terraform...\e[0m"
-    wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-    sudo apt-get update
-    sudo apt-get install -y terraform
+# Function to clone Terraform version manager repository
+clone_tfenv_repository() {
+  if [ -d ~/.tfenv ]; then
+      echo -e "${YELLOW}Repository 'Terraform version manager' already exists.${NC}"
+  else
+      echo -e "${GREEN}Cloning the repository 'Terraform version manager'.${NC}"
+      git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
   fi
-  echo "$(tput setaf 4)$(terraform --version)$(tput sgr0)"
 }
 
 # Function to configure git.
 git_configuration() {
   # Checking whether user data is already set up.
   if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then
-      echo -e "\e[32mNo user data configuration in GIT.\e[0m"
+      echo -e "${RED}No user data configuration in GIT.${NC}"
       read -p "Enter your name: " name
       read -p "Enter your last name: " last_name
       read -p "Enter your e-mail address: " email
@@ -127,31 +168,60 @@ git_configuration() {
       git config --global user.name "$name $last_name"
       git config --global user.email "$email"
 
-      echo -e "\e[34mConfiguration complete. The user data in GIT has been updated:\e[0m"
-      echo "$(tput setaf 4)$(git config --global --list | grep user)$(tput sgr0)"
+      echo -e "${GREEN}Configuration complete. The user data in GIT has been updated:${NC}"
+      echo -e "${BLUE}$(git config --global --list | grep user)${NC}"
   else
-      echo -e "\e[34mThe user data in GIT is already configured:\e[0m"
-      echo "$(tput setaf 4)$(git config --global --list | grep user)$(tput sgr0)"
+      echo -e "${YELLOW}The user data in GIT is already configured:${NC}"
+      echo -e "${BLUE}$(git config --global --list | grep user)${NC}"
   fi
+  
+  # Set useful Git defaults
+  echo -e "${GREEN}Setting up Git defaults...${NC}"
+  git config --global init.defaultBranch main
+  git config --global pull.rebase false
+  git config --global core.autocrlf input
+  git config --global core.editor "nano"
+  git config --global alias.st status
+  git config --global alias.co checkout
+  git config --global alias.br branch
+  git config --global alias.unstage "reset HEAD --"
+  git config --global alias.last "log -1 HEAD"
+  git config --global alias.visual "!gitk"
 }
 
+# Update/Download package information from all configured sources.
+sudo apt-get update && sudo apt-get upgrade -y 2>&1 >/dev/null
+sudo apt-get install -y unzip python3-pip jq wslu keychain curl wget git
+
+# Install modern CLI tools for better developer experience
+echo -e "${GREEN}Installing modern CLI tools...${NC}"
+sudo apt-get install -y bat exa fd-find ripgrep fzf tree htop neofetch
+
+# Update pip to the latest version with --break-system-packages
+sudo rm /usr/lib/python3.12/EXTERNALLY-MANAGED
+echo -e "${GREEN}Updating pip to the latest version...${NC}"
+python3 -m pip install --upgrade pip --break-system-packages
+
+# Install Python packages
+echo -e "${GREEN}Installing Python packages...${NC}"
+python3 -m pip install --break-system-packages ansible ansible-lint argcomplete boto3 pywinrm requests
+
+# # Enable passwoordless for sudo.
+# sudo sed -i '/^%sudo.*ALL=(ALL:ALL) ALL$/ s/ALL$/NOPASSWD:ALL/' /etc/sudoers
+
+# Function call
+echo -e "${BLUE}Starting WSL2 configuration...${NC}"
+echo -e "${BLUE}Log file: $LOG_FILE${NC}"
+
+check_internet
+copy_bashrc_extra
 install_aws_cli
 install_session_manager_plugin
 install_docker
 post_install_docker
-# install_terraform
+clone_tfenv_repository
 git_configuration
 
-# Cloning the repository "Terraform version manager".
-if [ -d ~/.tfenv ]; then
-  echo -e "\e[34mRepository Terraform version manager already exists.\e[0m"
-else
-  git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
-fi
-
-# Enable passwoordless for sudo.
-sudo sed -i '/^%sudo.*ALL=(ALL:ALL) ALL$/ s/ALL$/NOPASSWD:ALL/' /etc/sudoers
-
 echo
-echo -e "\e[31mThe basic configuration of WSL2 is now complete.\e[0m"
-echo -e "\e[31mYou should restart WSL2 using PowerShell as administrator and use the command 'wsl --shutdown'.\e[0m"
+echo -e "${RED}The basic configuration of WSL2 is now complete.${NC}"
+echo -e "${RED}You should restart WSL2 using PowerShell as administrator and use the command 'wsl -t Ubuntu-24.04'.${NC}"

@@ -1,4 +1,9 @@
-sshkeys_dir="$HOME/.ssh"
+# Colors for messages
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+BLUE="\e[34m"
+NC="\e[0m" # No Color
 
 # set a fancy prompt (non-color, unless we know we "want" color)
 case "$TERM" in
@@ -38,64 +43,80 @@ unset color_prompt force_color_prompt
 
 export PROMPT_DIRTRIM=3
 
+# Use CDPATH to define the base directory for cd command
+CDPATH=$CDPATH:$HOME/repositories/
+
 # Command line completion for AWS CLI.
 complete -C '/usr/local/bin/aws_completer' aws
 
-# Set default browser
-export BROWSER="/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+# Set default browser to use wslview (opens URLs in Windows default browser)
+export BROWSER="wslview"
 
-# Check if the .ssh directory exists or create it if it doesn't.
-if [ ! -d "$sshkeys_dir" ]; then
-    echo "Creating $sshkeys_dir directory..."
-    mkdir -p "$sshkeys_dir"
-    chmod 700 "$sshkeys_dir"
-fi
+# Modern CLI tool aliases and configurations
+alias ll='exa -la --git'
+alias ls='exa'
+alias cat='batcat'
+alias find='fdfind'
+alias grep='rg'
 
-# Check if SSH keys exist.
-if [ -d "$sshkeys_dir" ]; then
-    ssh_files=($sshkeys_dir/*)
-    
-    # Exclude .pub, known_hosts and config files.
-    ssh_files_filtered=()
-    for file in "${ssh_files[@]}"; do
-        if [ -e "$file" ]; then
-            filename=$(basename "$file")
-            if [ "$filename" != "known_hosts" ] && [ "$filename" != "known_hosts.old" ] && [ "$filename" != "config" ] && [ "$filename" != "user_ssh_config" ] && [[ ! "$filename" == *.pub ]]; then
-                ssh_files_filtered+=("$file")
-                
-                # Check file ownership.
-                file_owner=$(stat -c "%U" "$file")
-                file_group=$(stat -c "%G" "$file")
-                file_permissions=$(stat -c "%a" "$file")
-                
-                current_user=$(whoami)
-                
-                # Check if file owner and group are the current user.
-                if [ "$file_owner" != "$current_user" ] || [ "$file_group" != "$current_user" ]; then
-                    echo "Updating ownership for $filename to $current_user:$current_user..."
-                    chown "$current_user:$current_user" "$file"
-                fi
-                
-                # Check if file permissions are 600.
-                if [ "$file_permissions" != "600" ]; then
-                    echo "Updating permissions for $filename to 600..."
-                    chmod 600 "$file"
+sshkeys_dir="$HOME/.ssh"
+
+manage_ssh_keys() {
+    # Check if the ssh-key directory exists or create it if it doesn't.
+    if [ ! -d "$sshkeys_dir" ]; then
+        echo -e "${GREEN}Creating $sshkeys_dir directory...${NC}"
+        sudo mkdir -p "$sshkeys_dir"
+        sudo chown -R $USER:$USER "$sshkeys_dir"
+        chmod 700 "$sshkeys_dir"
+    fi
+
+    # Check if SSH keys exist.
+    if [ -d "$sshkeys_dir" ]; then
+        ssh_files=($sshkeys_dir/*)
+        
+        # Exclude .pub, known_hosts and config files.
+        ssh_files_filtered=()
+        for file in "${ssh_files[@]}"; do
+            if [ -e "$file" ]; then
+                filename=$(basename "$file")
+                if [ "$filename" != "known_hosts" ] && [ "$filename" != "known_hosts.old" ] && [ "$filename" != "config" ] && [ "$filename" != "user_ssh_config" ] && [[ ! "$filename" == *.pub ]]; then
+                    ssh_files_filtered+=("$file")
+                    
+                    # Check file ownership.
+                    file_owner=$(stat -c "%U" "$file")
+                    file_group=$(stat -c "%G" "$file")
+                    file_permissions=$(stat -c "%a" "$file")
+                    
+                    current_user=$(whoami)
+                    
+                    # Check if file owner and group are the current user.
+                    if [ "$file_owner" != "$current_user" ] || [ "$file_group" != "$current_user" ]; then
+                        echo -e "${YELLOW}Updating ownership for $filename to $current_user:$current_user...${NC}"
+                        chown "$current_user:$current_user" "$file"
+                    fi
+                    
+                    # Check if file permissions are 600.
+                    if [ "$file_permissions" != "600" ]; then
+                        echo -e "${YELLOW}Updating permissions for $filename to 600...${NC}"
+                        chmod 600 "$file"
+                    fi
                 fi
             fi
+        done
+        
+        if [ "${#ssh_files_filtered[@]}" -gt 0 ]; then
+            eval "$(keychain --eval --agents ssh "${ssh_files_filtered[@]}")"
+        else
+            echo
+            echo -e "${YELLOW}There are no SSH keys to load from the $sshkeys_dir directory.${NC}"
         fi
-    done
-    
-    if [ "${#ssh_files_filtered[@]}" -gt 0 ]; then
-        eval "$(keychain --eval --agents ssh "${ssh_files_filtered[@]}")"
-    else
-        echo "There are no SSH keys to load from the $sshkeys_dir directory."
     fi
-fi
+}
 
 # Add the $HOME/.tfenv/bin directory to the PATH environment variable.
 if [[ ":$PATH:" != *":$HOME/.tfenv/bin:"* ]]; then
     export PATH="$PATH:$HOME/.tfenv/bin"
 fi
 
-# Starting docker daemon.
-nohup sudo -b dockerd < /dev/null > /dev/null 2>&1
+# Function call
+manage_ssh_keys
