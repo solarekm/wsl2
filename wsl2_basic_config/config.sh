@@ -15,15 +15,7 @@ YELLOW="\e[33m"
 BLUE="\e[34m"
 NC="\e[0m" # No Color
 
-# Function to check internet connectivity
-check_internet() {
-  echo -e "${BLUE}Checking internet connectivity...${NC}"
-  if ! ping -c 1 8.8.8.8 &> /dev/null; then
-    echo -e "${RED}No internet connection. Please check your network and try again.${NC}"
-    exit 1
-  fi
-  echo -e "${GREEN}Internet connection confirmed.${NC}"
-}
+# === UTILITY FUNCTIONS ===
 
 # Function to check if package is available in repositories
 check_package_availability() {
@@ -111,7 +103,89 @@ install_package_safely() {
   fi
 }
 
-# Function to copy and configure .bashrc_extra
+# === MAIN FUNCTIONS IN EXECUTION ORDER ===
+
+# 1. Function to check internet connectivity
+check_internet() {
+  echo -e "${BLUE}Checking internet connectivity...${NC}"
+  if ! ping -c 1 8.8.8.8 &> /dev/null; then
+    echo -e "${RED}No internet connection. Please check your network and try again.${NC}"
+    exit 1
+  fi
+  echo -e "${GREEN}Internet connection confirmed.${NC}"
+}
+
+# 2. Function to install basic system packages
+install_basic_packages() {
+  echo -e "${GREEN}Installing basic system packages...${NC}"
+  # Update/Download package information from all configured sources.
+  sudo apt-get update && sudo apt-get upgrade -y 2>&1 >/dev/null
+
+  # Check availability of modern CLI tools before installation
+  check_package_availability "bat" "exa" "eza" "fd-find" "fd" "ripgrep" "fzf" "tree" "htop" "neofetch"
+
+  sudo apt-get install -y unzip python3-pip jq wslu keychain curl wget git
+}
+
+# 3. Function to install modern CLI tools
+install_modern_cli_tools() {
+  echo -e "${GREEN}Installing modern CLI tools...${NC}"
+  # Install packages safely with fallbacks
+  install_package_safely "bat" "batcat" "syntax highlighting cat replacement"
+  install_package_safely "exa" "eza" "modern ls replacement" 
+  install_package_safely "fd-find" "fd" "fast find replacement"
+  install_package_safely "ripgrep" "rg" "fast grep replacement"
+  install_package_safely "fzf" "" "fuzzy finder"
+  install_package_safely "tree" "" "directory tree viewer"
+  install_package_safely "htop" "" "interactive process viewer"
+  install_package_safely "neofetch" "" "system information tool"
+}
+
+# 4. Function to setup Python environment
+setup_python_environment() {
+  echo -e "${GREEN}Setting up Python environment...${NC}"
+  
+  # Update pip to the latest version with --break-system-packages
+  # Remove EXTERNALLY-MANAGED file if it exists to allow pip installations
+  # Check multiple possible locations for different Python versions
+  externally_managed_files=(
+      "/usr/lib/python3.12/EXTERNALLY-MANAGED"
+      "/usr/lib/python3.11/EXTERNALLY-MANAGED"
+      "/usr/lib/python3.10/EXTERNALLY-MANAGED"
+      "/usr/lib/python3/EXTERNALLY-MANAGED"
+  )
+
+  removed_any=false
+  for file in "${externally_managed_files[@]}"; do
+      if [ -f "$file" ]; then
+          echo -e "${BLUE}Removing Python EXTERNALLY-MANAGED restriction: $file${NC}"
+          sudo rm "$file" || echo -e "${YELLOW}Failed to remove $file${NC}"
+          removed_any=true
+      fi
+  done
+
+  if [ "$removed_any" = false ]; then
+      echo -e "${YELLOW}No EXTERNALLY-MANAGED files found (already removed or using system packages)${NC}"
+  fi
+
+  echo -e "${GREEN}Updating pip to the latest version...${NC}"
+  python3 -m pip install --upgrade pip --break-system-packages
+
+  # Install Python packages
+  echo -e "${GREEN}Installing Python packages...${NC}"
+  python_packages="ansible ansible-lint argcomplete boto3 pywinrm requests"
+
+  for package in $python_packages; do
+      if ! python3 -c "import $package" &>/dev/null; then
+          echo -e "${BLUE}Installing Python package: $package${NC}"
+          python3 -m pip install --break-system-packages "$package" || echo -e "${YELLOW}Failed to install $package, continuing...${NC}"
+      else
+          echo -e "${YELLOW}Python package $package already installed${NC}"
+      fi
+  done
+}
+
+# 5. Function to copy and configure .bashrc_extra
 copy_bashrc_extra() {
   local bashrc_extra=".bashrc_extra"
   local bashrc="$HOME/.bashrc"
@@ -142,7 +216,7 @@ fi' >> "$bashrc"
   fi
 }
 
-# Function to install AWS CLI.
+# 6. Function to install AWS CLI
 install_aws_cli() {
   if ! command -v aws &> /dev/null; then
     echo -e "${GREEN}Installing AWS CLI...${NC}"
@@ -158,7 +232,7 @@ install_aws_cli() {
   echo -e "${BLUE}$(aws --version)${NC}"
 }
 
-# Function to install Session Manager plugin.
+# 7. Function to install Session Manager plugin
 install_session_manager_plugin() {
   if ! command -v session-manager-plugin &> /dev/null; then
     echo -e "${GREEN}Installing Session Manager plugin...${NC}"
@@ -173,18 +247,30 @@ install_session_manager_plugin() {
   echo -e "${BLUE}$(session-manager-plugin)${NC}"
 }
 
-# Function to install Docker.
+# 8. Function to install Docker
 install_docker() {
   if ! command -v docker &> /dev/null; then
     # Add Docker's official GPG key.
     echo -e "${GREEN}Installing Docker...${NC}"
     sudo install -m 0755 -d /etc/apt/keyrings
-    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    sudo chmod a+r /etc/apt/keyrings/docker.asc
-    # Add the repository to Apt sources.
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Download GPG key only if it doesn't exist
+    if [ ! -f /etc/apt/keyrings/docker.asc ]; then
+        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        sudo chmod a+r /etc/apt/keyrings/docker.asc
+    else
+        echo -e "${YELLOW}Docker GPG key already exists${NC}"
+    fi
+    
+    # Add the repository to Apt sources only if not already added
+    if [ ! -f /etc/apt/sources.list.d/docker.list ]; then
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+          $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    else
+        echo -e "${YELLOW}Docker repository already configured${NC}"
+    fi
+    
     sudo apt-get update
     # Install the Docker packages.
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
@@ -192,7 +278,7 @@ install_docker() {
   echo -e "${BLUE}$(docker --version)${NC}"
 }
 
-# Post-installation steps for Docker Engine.
+# 9. Post-installation steps for Docker Engine
 post_install_docker() {
   if [ ! -d "$HOME/.docker" ]; then
     mkdir -p $HOME/.docker
@@ -201,14 +287,28 @@ post_install_docker() {
   fi
   # Add your user to the docker group.
   if ! groups $USER | grep &>/dev/null '\bdocker\b'; then
+    echo -e "${BLUE}Adding user to docker group...${NC}"
     sudo usermod -aG docker $USER
+  else
+    echo -e "${YELLOW}User already in docker group${NC}"
   fi
   # Configure Docker to start on boot with systemd
-  sudo systemctl enable docker.service
-  sudo systemctl enable containerd.service
+  if ! systemctl is-enabled docker.service &>/dev/null; then
+    echo -e "${BLUE}Enabling Docker service...${NC}"
+    sudo systemctl enable docker.service
+  else
+    echo -e "${YELLOW}Docker service already enabled${NC}"
+  fi
+  
+  if ! systemctl is-enabled containerd.service &>/dev/null; then
+    echo -e "${BLUE}Enabling containerd service...${NC}"
+    sudo systemctl enable containerd.service
+  else
+    echo -e "${YELLOW}Containerd service already enabled${NC}"
+  fi
 }
 
-# Function to clone Terraform version manager repository
+# 10. Function to clone Terraform version manager repository
 clone_tfenv_repository() {
   if [ -d ~/.tfenv ]; then
       echo -e "${YELLOW}Repository 'Terraform version manager' already exists.${NC}"
@@ -218,7 +318,7 @@ clone_tfenv_repository() {
   fi
 }
 
-# Function to configure git.
+# 11. Function to configure git
 git_configuration() {
   # Checking whether user data is already set up.
   if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then
@@ -240,53 +340,28 @@ git_configuration() {
   
   # Set useful Git defaults
   echo -e "${GREEN}Setting up Git defaults...${NC}"
-  git config --global init.defaultBranch main
-  git config --global pull.rebase false
-  git config --global core.autocrlf input
-  git config --global core.editor "nano"
-  git config --global alias.st status
-  git config --global alias.co checkout
-  git config --global alias.br branch
-  git config --global alias.unstage "reset HEAD --"
-  git config --global alias.last "log -1 HEAD"
-  git config --global alias.visual "!gitk"
+  git config --global init.defaultBranch main || true
+  git config --global pull.rebase false || true
+  git config --global core.autocrlf input || true
+  git config --global core.editor "nano" || true
+  git config --global alias.st status || true
+  git config --global alias.co checkout || true
+  git config --global alias.br branch || true
+  git config --global alias.unstage "reset HEAD --" || true
+  git config --global alias.last "log -1 HEAD" || true
+  git config --global alias.visual "!gitk" || true
 }
 
-# Update/Download package information from all configured sources.
-sudo apt-get update && sudo apt-get upgrade -y 2>&1 >/dev/null
-
-# Check availability of modern CLI tools before installation
-check_package_availability "bat" "exa" "eza" "fd-find" "fd" "ripgrep" "fzf" "tree" "htop" "neofetch"
-
-sudo apt-get install -y unzip python3-pip jq wslu keychain curl wget git
-
-# Install packages safely with fallbacks
-install_package_safely "bat" "batcat" "syntax highlighting cat replacement"
-install_package_safely "exa" "eza" "modern ls replacement" 
-install_package_safely "fd-find" "fd" "fast find replacement"
-install_package_safely "ripgrep" "rg" "fast grep replacement"
-install_package_safely "fzf" "" "fuzzy finder"
-install_package_safely "tree" "" "directory tree viewer"
-install_package_safely "htop" "" "interactive process viewer"
-install_package_safely "neofetch" "" "system information tool"
-
-# Update pip to the latest version with --break-system-packages
-sudo rm /usr/lib/python3.12/EXTERNALLY-MANAGED
-echo -e "${GREEN}Updating pip to the latest version...${NC}"
-python3 -m pip install --upgrade pip --break-system-packages
-
-# Install Python packages
-echo -e "${GREEN}Installing Python packages...${NC}"
-python3 -m pip install --break-system-packages ansible ansible-lint argcomplete boto3 pywinrm requests
-
-# # Enable passwoordless for sudo.
-# sudo sed -i '/^%sudo.*ALL=(ALL:ALL) ALL$/ s/ALL$/NOPASSWD:ALL/' /etc/sudoers
+# === SCRIPT EXECUTION ===
 
 # Function call
 echo -e "${BLUE}Starting WSL2 configuration...${NC}"
 echo -e "${BLUE}Log file: $LOG_FILE${NC}"
 
 check_internet
+install_basic_packages
+install_modern_cli_tools
+setup_python_environment
 copy_bashrc_extra
 install_aws_cli
 install_session_manager_plugin
