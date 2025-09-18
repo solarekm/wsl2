@@ -1,69 +1,133 @@
-# Windows Subsystem for Linux (WSL) Basic Configuration
+# 🐧 WSL2 Complete Development Environment Setup
 
-This repository holds a set of scripts designed to prepare a Windows system for WSL and to configure a basic working environment in WSL.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2B-lightgrey.svg)
+![WSL](https://img.shields.io/badge/WSL-2.0-green.svg)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange.svg)
 
-## Contents
-- `SetupWSL2.ps1` - A PowerShell script to automate the setup of Windows Subsystem for Linux (WSL) on a Windows machine.
-- `wsl2_basic_config/` - A collection of configurations and scripts to set up a basic working environment within WSL.
+A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL2) with a complete development environment. This repository provides scripts to install WSL2 on Windows and configure a fully-featured Ubuntu development environment with modern CLI tools, Docker, AWS tools, and more.
 
-## Getting Started
+## ✨ Features
+
+### Windows Setup (`SetupWSL2.ps1`)
+- ✅ Automatic WSL2 feature enablement
+- ✅ Virtual Machine Platform configuration
+- ✅ Latest WSL distribution installation
+- ✅ Winget package manager setup
+
+### WSL Development Environment (`config.sh`)
+- 🔧 **System Packages**: Essential development tools and utilities
+- 🛠️ **Modern CLI Tools**: bat, exa/eza, fd-find, ripgrep, fzf, tree, htop, neofetch
+- 🐍 **Python Environment**: pip, ansible, boto3, and development packages
+- ☁️ **Cloud Tools**: AWS CLI, Session Manager plugin
+- 🐳 **Containerization**: Docker CE with proper user configuration
+- 🌍 **Infrastructure**: Terraform environment manager (tfenv)
+- 📝 **Version Control**: Git with useful aliases and configurations
+- 🔐 **Security**: SSH key management with keychain
+- 🎨 **Shell Enhancement**: Custom prompt with git integration and modern aliases
+
+## 📋 Contents
+- `SetupWSL2.ps1` - PowerShell script for Windows WSL2 installation
+- `wsl2_basic_config/` - Complete WSL environment configuration suite
+  - `config.sh` - Main configuration script with robust error handling
+  - `.bashrc_extra` - Enhanced shell configuration with modern aliases
+  - `README.md` - Detailed WSL configuration documentation
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Windows 10 or higher.
-- PowerShell 5.1 or higher.
-- Administrative privileges on the system.
+- Windows 10 version 2004+ or Windows 11
+- PowerShell 5.1 or higher
+- Administrative privileges
+- Active internet connection
 
-### Installation
+### Step 1: Windows Setup
 
-1. Clone the repository or download the ZIP file and extract it on your local machine.
+1. **Clone the repository:**
+   ```powershell
+   git clone https://github.com/solarekm/wsl2.git
+   cd wsl2
+   ```
 
-    ```shell
-    git clone https://github.com/solarekm/wsl2.git
-    ```
+2. **Run PowerShell as Administrator and execute:**
+   ```powershell
+   .\SetupWSL2.ps1
+   ```
 
-2. Navigate to the directory containing `SetupWSL2.ps1`.
+3. **Restart your computer** when prompted.
 
-3. Right-click on PowerShell and run as Administrator.
+### Step 2: WSL Environment Configuration
 
-4. Execute the `SetupWSL2.ps1` script:
+1. **Open WSL terminal** (search "Ubuntu" in Start Menu)
 
-    ```powershell
-    .\SetupWSL2.ps1
-    ```
+2. **Navigate to configuration directory:**
+   ```bash
+   cd /path/to/wsl2/wsl2_basic_config
+   ```
 
-5. After the script finishes, restart your computer to complete the WSL2 feature installation.
+3. **Run the configuration script:**
+   ```bash
+   chmod +x config.sh
+   ./config.sh
+   ```
 
-### Configuring WSL Environment
+4. **Follow interactive prompts** for Git configuration
 
-1. After your system restarts, open WSL terminal.
+5. **Restart WSL** to apply all changes:
+   ```powershell
+   # In PowerShell as Administrator
+   wsl -t Ubuntu-24.04
+   wsl
+   ```
 
-2. Navigate to the `wsl2_basic_config` directory:
+## 🛠️ What Gets Installed
 
-    ```shell
-    cd path/to/wsl2_basic_config
-    ```
+### Core System Tools
+- **Package Managers**: apt, pip, winget integration
+- **Network Tools**: curl, wget, wslu (WSL utilities)
+- **Development**: git, unzip, keychain
 
-3. Run the configuration script:
+### Modern CLI Replacements
+- **`bat`/`batcat`** → Enhanced `cat` with syntax highlighting
+- **`exa`/`eza`** → Modern `ls` with git integration
+- **`fd-find`** → Fast and user-friendly `find` replacement
+- **`ripgrep`** → Ultra-fast text search tool
+- **`fzf`** → Command-line fuzzy finder
+- **`tree`** → Directory structure visualization
+- **`htop`** → Interactive process viewer
+- **`neofetch`** → System information display
 
-    ```shell
-    ./config.sh
-    ```
+### Development Environment
+- **Docker**: Container platform with user permissions
+- **AWS CLI**: Command-line interface for Amazon Web Services
+- **Session Manager**: Secure shell access to EC2 instances
+- **Terraform**: Infrastructure as code via tfenv manager
 
-4. Follow any on-screen prompts to complete the configuration.
+### Python Ecosystem
+- **ansible** → Infrastructure automation
+- **boto3** → AWS SDK for Python
+- **requests** → HTTP library
+- **argcomplete** → Command completion
+- **pywinrm** → Windows Remote Management
 
-## What's Inside `wsl2_basic_config`
+## 🔧 Advanced Features
 
-- `.bashrc_extra` - Additional bash configurations.
-- `config.sh` - Script to set up environment variables and install necessary packages.
-- `py_libraries` - List of Python libraries to install.
-- `req_packages` - System packages required for your WSL environment.
+- **🔄 Idempotent**: Run multiple times safely
+- **🛡️ Error Resilient**: Robust error handling and recovery
+- **📝 Comprehensive Logging**: All operations logged to `~/wsl2_setup.log`
+- **🔍 Package Fallbacks**: Automatic alternatives for unavailable packages
+- **🌐 Network Retry**: Automatic retry for network operations
+- **⚡ Smart Detection**: Skips already installed components
 
-## Contributions
+## 📖 Documentation
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+For detailed configuration options and troubleshooting, see:
+- [WSL Configuration Guide](./wsl2_basic_config/README.md)
+- [Installation Log](~/wsl2_setup.log) (created during setup)
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -71,10 +135,17 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
+## 🙏 Acknowledgments
 
-Project Link: https://github.com/solarekm/wsl2
+- Microsoft WSL team for the amazing Windows Subsystem for Linux
+- Ubuntu team for the excellent Ubuntu distribution
+- All maintainers of the CLI tools and packages included in this setup
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/solarekm/wsl2/issues)
+- **Project**: [GitHub Repository](https://github.com/solarekm/wsl2)
