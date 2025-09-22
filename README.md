@@ -99,9 +99,11 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
 6. **Restart WSL** to apply all changes:
    ```powershell
    # In PowerShell as Administrator
-   wsl -t Ubuntu-24.04
+   wsl -t <your-distro-name>
    wsl
    ```
+   
+   **Note**: Replace `<your-distro-name>` with your actual WSL distribution name. The script will show the exact command at the end of installation.
 
 ## 🛠️ What Gets Installed
 

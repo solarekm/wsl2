@@ -1034,6 +1034,27 @@ EOF
   echo
 }
 
+# Function to get WSL distribution name dynamically
+get_wsl_distro_name() {
+  # Method 1: Use WSL_DISTRO_NAME environment variable (most reliable)
+  if [ -n "$WSL_DISTRO_NAME" ]; then
+    echo "$WSL_DISTRO_NAME"
+    return 0
+  fi
+  
+  # Method 2: Fallback to Ubuntu-{version} format
+  if [ -f "/etc/os-release" ]; then
+    local ubuntu_version=$(/bin/grep "VERSION_ID" /etc/os-release 2>/dev/null | cut -d'=' -f2 | tr -d '"')
+    if [ -n "$ubuntu_version" ]; then
+      echo "Ubuntu-$ubuntu_version"
+      return 0
+    fi
+  fi
+  
+  # Method 3: Final fallback
+  echo "Ubuntu-24.04"
+}
+
 # === SCRIPT EXECUTION ===${NC}
 
 if [ "$CHECK_ONLY" = true ]; then
@@ -1087,4 +1108,5 @@ verify_installation
 
 echo
 echo -e "${RED}The basic configuration of WSL2 is now complete.${NC}"
-echo -e "${RED}You should restart WSL2 using PowerShell as administrator and use the command 'wsl -t Ubuntu-24.04'.${NC}"
+wsl_distro=$(get_wsl_distro_name)
+echo -e "${RED}You should restart WSL2 using PowerShell as administrator and use the command 'wsl -t $wsl_distro'.${NC}"

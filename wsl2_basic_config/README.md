@@ -50,10 +50,12 @@ This directory contains the automated configuration system for setting up a comp
 
 5. **Restart your WSL session** to activate all changes:
    ```bash
-   # In PowerShell as Administrator
-   wsl -t Ubuntu-24.04
+   # In PowerShell as Administrator  
+   wsl -t <your-distro-name>
    wsl
    ```
+   
+   **Note**: The script will display the exact command with your distribution name at the end of installation.
 
 ## 🛠️ What Gets Configured
 
