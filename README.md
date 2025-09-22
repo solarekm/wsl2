@@ -96,6 +96,7 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
 - **`tree`** → Directory structure visualization
 - **`htop`** → Interactive process viewer
 - **`neofetch`** → System information display
+- **`gh`** → GitHub CLI for repository management
 
 ### Development Environment
 - **Docker**: Container platform with user permissions

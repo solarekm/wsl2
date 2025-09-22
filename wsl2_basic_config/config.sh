@@ -122,7 +122,7 @@ install_basic_packages() {
   sudo apt-get update && sudo apt-get upgrade -y 2>&1 >/dev/null
 
   # Check availability of modern CLI tools before installation
-  check_package_availability "bat" "exa" "eza" "fd-find" "fd" "ripgrep" "fzf" "tree" "htop" "neofetch"
+  check_package_availability "bat" "exa" "eza" "fd-find" "fd" "ripgrep" "fzf" "tree" "htop" "neofetch" "gh"
 
   sudo apt-get install -y unzip python3-pip jq wslu keychain curl wget git
 }
@@ -139,6 +139,7 @@ install_modern_cli_tools() {
   install_package_safely "tree" "" "directory tree viewer"
   install_package_safely "htop" "" "interactive process viewer"
   install_package_safely "neofetch" "" "system information tool"
+  install_package_safely "gh" "" "GitHub CLI for repository management"
 }
 
 # 4. Function to setup Python environment

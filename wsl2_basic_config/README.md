@@ -61,6 +61,7 @@ This directory contains the automated configuration system for setting up a comp
 | `tree` | Directory tree viewer | None | Direct command |
 | `htop` | Interactive process monitor | None | Direct command |
 | `neofetch` | System information display | None | Direct command |
+| `gh` | GitHub CLI for repository management | None | Direct command |
 
 #### Cloud & Infrastructure
 - **AWS CLI v2**: Latest Amazon Web Services command-line interface
@@ -104,6 +105,11 @@ alias grep='rg'             # if ripgrep available
 #### Browser Integration
 - **`wslview`**: Opens URLs in Windows default browser
 - **Environment Variable**: `BROWSER=wslview` for automatic integration
+
+#### Command Completion
+- **AWS CLI**: Full command and parameter completion
+- **GitHub CLI**: Complete `gh` command completion with contexts
+- **Git**: Enhanced completion for aliases and commands
 
 ## 🔧 Advanced Features
 

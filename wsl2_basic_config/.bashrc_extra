@@ -49,6 +49,11 @@ CDPATH=$CDPATH:$HOME/repositories/
 # Command line completion for AWS CLI.
 complete -C '/usr/local/bin/aws_completer' aws
 
+# Command line completion for GitHub CLI.
+if command -v gh &> /dev/null; then
+    eval "$(gh completion -s bash)"
+fi
+
 # Set default browser to use wslview (opens URLs in Windows default browser)
 export BROWSER="wslview"
 
