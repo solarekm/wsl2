@@ -269,6 +269,54 @@ fi' >> "$bashrc"
   fi
 }
 
+# 5a. Function to setup CLI tool aliases (bat, fd) for consistent naming
+setup_cli_tool_aliases() {
+  echo -e "${GREEN}Setting up CLI tool aliases for consistent naming...${NC}"
+  
+  local need_local_bin_path=false
+  
+  # Create ~/.local/bin if it doesn't exist
+  mkdir -p "$HOME/.local/bin"
+  
+  # Setup bat alias if only batcat is available
+  if command -v batcat &> /dev/null && ! test -f "$(command -v bat 2>/dev/null)"; then
+    echo -e "${BLUE}Creating 'bat' command (symlink to batcat)...${NC}"
+    if ln -sf "$(which batcat)" "$HOME/.local/bin/bat" 2>/dev/null; then
+      echo -e "${GREEN}✅ Successfully created 'bat' command${NC}"
+      need_local_bin_path=true
+    else
+      echo -e "${YELLOW}⚠️  Could not create 'bat' symlink, 'batcat' works identically${NC}"
+    fi
+  elif test -f "$(command -v bat 2>/dev/null)"; then
+    echo -e "${GREEN}✅ 'bat' already available${NC}"
+  fi
+  
+  # Setup fd alias if only fdfind is available
+  if command -v fdfind &> /dev/null && ! test -f "$(command -v fd 2>/dev/null)"; then
+    echo -e "${BLUE}Creating 'fd' command (symlink to fdfind)...${NC}"
+    if ln -sf "$(which fdfind)" "$HOME/.local/bin/fd" 2>/dev/null; then
+      echo -e "${GREEN}✅ Successfully created 'fd' command${NC}"
+      need_local_bin_path=true
+    else
+      echo -e "${YELLOW}⚠️  Could not create 'fd' symlink, 'fdfind' works identically${NC}"
+    fi
+  elif test -f "$(command -v fd 2>/dev/null)"; then
+    echo -e "${GREEN}✅ 'fd' already available${NC}"
+  fi
+  
+  # Add ~/.local/bin to PATH if we created any symlinks
+  if [ "$need_local_bin_path" = true ]; then
+    if ! grep -q 'PATH.*\.local/bin' "$HOME/.bashrc_extra" 2>/dev/null; then
+      echo >> "$HOME/.bashrc_extra"
+      echo '# Add ~/.local/bin to PATH for user binaries' >> "$HOME/.bashrc_extra"
+      echo 'if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then' >> "$HOME/.bashrc_extra"
+      echo '    export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc_extra"
+      echo 'fi' >> "$HOME/.bashrc_extra"
+      echo -e "${GREEN}✅ Added ~/.local/bin to PATH in .bashrc_extra${NC}"
+    fi
+  fi
+}
+
 # 6. Function to install AWS CLI
 install_aws_cli() {
   if ! command -v aws &> /dev/null; then
@@ -789,6 +837,10 @@ fix_missing_components() {
     echo -e "✅ ${GREEN}.bashrc_extra already configured${NC}"
   fi
 
+  # Setup CLI tool aliases after installing packages
+  echo -e "${BLUE}🔗 Setting up CLI tool aliases...${NC}"
+  setup_cli_tool_aliases
+
   echo
   echo -e "${BLUE}========================================${NC}"
   echo -e "${BLUE}           FIX SUMMARY                  ${NC}"
@@ -1022,6 +1074,7 @@ install_basic_packages
 install_modern_cli_tools
 setup_python_environment
 copy_bashrc_extra
+setup_cli_tool_aliases
 install_aws_cli
 install_session_manager_plugin
 install_docker
