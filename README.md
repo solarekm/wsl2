@@ -10,10 +10,14 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
 ## ✨ Features
 
 ### Windows Setup (`SetupWSL2.ps1`)
-- ✅ Automatic WSL2 feature enablement
-- ✅ Virtual Machine Platform configuration
-- ✅ Latest WSL distribution installation
-- ✅ Winget package manager setup
+- ✅ **Enterprise-grade error handling** with comprehensive logging
+- ✅ **Intelligent Winget installation** with proper download mechanism  
+- ✅ **WSL2 feature enablement** with verification and restart detection
+- ✅ **Virtual Machine Platform** configuration with status checking
+- ✅ **Progress tracking** with 5-step installation process
+- ✅ **Detailed logging** to timestamped log files
+- ✅ **Colorful console output** with success/warning/error indicators
+- ✅ **Automatic verification** of each installation step
 
 ### WSL Development Environment (`config.sh`)
 - 🔧 **System Packages**: Essential development tools and utilities
@@ -27,7 +31,7 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
 - 🎨 **Shell Enhancement**: Custom prompt with git integration and modern aliases
 
 ## 📋 Contents
-- `SetupWSL2.ps1` - PowerShell script for Windows WSL2 installation
+- `SetupWSL2.ps1` - **Enhanced PowerShell script v2.0** for Windows WSL2 installation with enterprise-grade error handling
 - `wsl2_basic_config/` - Complete WSL environment configuration suite
   - `config.sh` - Main configuration script with robust error handling
   - `.bashrc_extra` - Enhanced shell configuration with modern aliases
@@ -53,6 +57,13 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
    ```powershell
    .\SetupWSL2.ps1
    ```
+   
+   **Enhanced PowerShell Features:**
+   - 🔄 **Progress tracking**: Visual 5-step installation process
+   - 📝 **Comprehensive logging**: Timestamped logs saved to `%USERPROFILE%\WSL2_Setup_[timestamp].log`
+   - ✅ **Smart verification**: Checks if features are already enabled to avoid redundant operations
+   - 🛡️ **Robust error handling**: Continues installation even if some steps fail, with detailed error reporting
+   - 🎨 **Professional UI**: Color-coded console output with emoji indicators
 
 3. **Restart your computer** when prompted.
 
@@ -71,9 +82,21 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
    ./config.sh
    ```
 
-4. **Follow interactive prompts** for Git configuration
+4. **Verify installation (optional):**
+   ```bash
+   # Check installation status without installing
+   ./config.sh --check
+   
+   # Fix only missing components (quick repair)
+   ./config.sh --fix
+   
+   # Fix optional warnings (SSH, tfenv, tool alternatives)
+   ./config.sh --fix-warnings
+   ```
 
-5. **Restart WSL** to apply all changes:
+5. **Follow interactive prompts** for Git configuration
+
+6. **Restart WSL** to apply all changes:
    ```powershell
    # In PowerShell as Administrator
    wsl -t Ubuntu-24.04
@@ -119,6 +142,24 @@ A comprehensive automation suite for setting up Windows Subsystem for Linux (WSL
 - **🔍 Package Fallbacks**: Automatic alternatives for unavailable packages
 - **🌐 Network Retry**: Automatic retry for network operations
 - **⚡ Smart Detection**: Skips already installed components
+- **✅ Installation Verification**: Automatic post-install status checking with detailed reports
+
+### Script Options
+
+```bash
+./config.sh                 # Full installation with verification
+./config.sh --check         # Only run verification checks
+./config.sh --fix           # Fix only missing components (quick repair)
+./config.sh --fix-warnings  # Fix optional warnings (SSH, tfenv, alternatives)
+./config.sh --help          # Show help and usage information
+```
+
+The verification and repair system provides:
+- ✅ **Visual Status**: Color-coded success/warning/error indicators
+- 📊 **Detailed Reports**: Component-by-component installation status
+- 🎯 **Success Rate**: Overall installation percentage
+- 🔍 **Failure Analysis**: Specific failed components highlighted
+- 🔧 **Smart Repair**: Install only missing components without full reinstall
 
 ## 📖 Documentation
 

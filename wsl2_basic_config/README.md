@@ -31,9 +31,24 @@ This directory contains the automated configuration system for setting up a comp
    ./config.sh
    ```
 
-3. **Follow interactive prompts** for Git user configuration
+3. **Verify installation (optional):**
+   ```bash
+   # Check installation status anytime
+   ./config.sh --check
+   
+   # Fix only missing components (recommended after first check)
+   ./config.sh --fix
+   
+   # Fix optional warnings (SSH setup, tfenv, tool alternatives)
+   ./config.sh --fix-warnings
+   
+   # Show help and options
+   ./config.sh --help
+   ```
 
-4. **Restart your WSL session** to activate all changes:
+4. **Follow interactive prompts** for Git user configuration
+
+5. **Restart your WSL session** to activate all changes:
    ```bash
    # In PowerShell as Administrator
    wsl -t Ubuntu-24.04
@@ -121,6 +136,87 @@ alias grep='rg'             # if ripgrep available
 - **⚡ Smart Fallbacks**: Automatic alternatives for missing packages
 - **🌐 Network Resilience**: Retry mechanism for downloads
 
+### Installation Verification
+- **✅ Post-Install Checks**: Automatic verification after installation
+- **🎯 Component Status**: Individual check for each installed tool
+- **📊 Success Rate**: Overall installation percentage calculation
+- **🔍 Detailed Reports**: Visual status with color coding:
+  - ✅ Green: Successfully installed and working
+  - ⚠️ Yellow: Optional component or minor issues
+  - ❌ Red: Critical failure requiring attention
+
+#### Verification Commands
+```bash
+# Run only verification (no installation)
+./config.sh --check
+
+# Fix only missing components (smart repair)
+./config.sh --fix
+
+# Shows detailed status of:
+# - System tools (curl, git, etc.)
+# - Modern CLI tools (bat, exa, fzf, etc.)
+# - Python environment and packages
+# - Cloud tools (AWS CLI, Docker, etc.)
+# - Configuration files and SSH setup
+```
+
+### Smart Repair System
+The `--fix` option provides targeted component installation:
+- 🎯 **Selective Installation**: Only installs missing components
+- ⚡ **Fast Execution**: Skips already installed tools
+- 🔍 **Post-Fix Verification**: Automatic verification after repairs
+- 📊 **Repair Summary**: Clear report of fixed vs failed components
+
+**Example workflow:**
+```bash
+# 1. Check what's missing
+./config.sh --check
+
+# 2. Fix only the missing parts
+./config.sh --fix
+
+# 3. Verify everything is working
+./config.sh --check
+```
+
+### Warning Resolution System
+The `--fix-warnings` option addresses optional yellow warnings:
+
+#### **🌍 Terraform Environment**
+- Creates `~/.tfenv` directory structure
+- Links existing tfenv installation if present
+- Ensures PATH configuration works properly
+
+#### **🔑 SSH Configuration** 
+- Creates `~/.ssh` directory with proper permissions (700)
+- Generates SSH config template with examples
+- **Optionally generates SSH key pair** (interactive)
+- Sets up keys for GitHub/GitLab integration
+
+#### **🛠️ Tool Alternatives**
+- Installs `bat` if only `batcat` available
+- Installs `fd` if only `fdfind` available  
+- Provides preferred command names for consistency
+
+#### **Example Fix-Warnings Session:**
+```bash
+# Check what warnings exist
+./config.sh --check
+
+# Fix them interactively
+./config.sh --fix-warnings
+# Will prompt for SSH key generation if needed
+
+# Verify warnings are resolved
+./config.sh --check
+```
+
+**Interactive Features:**
+- SSH key generation prompts for email
+- Shows generated public key for copying to Git providers
+- All steps are optional and clearly explained
+
 ### Security Considerations
 - **SSH Key Management**: Automated permission fixing and keychain integration
 - **Docker Security**: Proper user group configuration
@@ -169,6 +265,44 @@ git config --global core.editor "nano"
 ```
 
 ## 🐛 Troubleshooting
+
+### Quick Diagnostics
+
+Before investigating specific issues, run the verification check:
+```bash
+./config.sh --check
+```
+
+This provides a comprehensive overview of what's working and what needs attention. Look for:
+- ❌ **Red items**: Critical failures requiring immediate attention
+- ⚠️ **Yellow items**: Optional components or minor issues
+- ✅ **Green items**: Successfully installed components
+
+### Understanding Yellow Warnings (⚠️)
+
+**Yellow warnings are NORMAL and usually safe to ignore.** They indicate:
+
+#### **🛠️ Optional CLI Tools**
+- `bat` - You have `batcat` instead (perfectly fine)
+- `fd` - You have `fdfind` instead (perfectly fine) 
+- Modern tools often have alternative package names on different systems
+
+#### **📁 Optional Directories/Files**
+- `~/.tfenv` - Only needed if you plan to use multiple Terraform versions
+- `~/.ssh` - Only needed if you use SSH keys for Git/servers
+- SSH keys - Only needed for secure Git authentication
+
+#### **When Yellow Warnings Matter:**
+- If you specifically need SSH keys for Git → Set them up manually
+- If you want exact tool names → Install alternatives: `sudo apt install bat fd-find`
+- If you plan to use Terraform → The tfenv is already configured
+
+#### **Safe to Ignore:**
+- Alternative package names (batcat vs bat)
+- Missing SSH if you use HTTPS for Git
+- Missing optional infrastructure tools you don't need
+
+**Bottom line:** If your success rate is 85%+ and you have no red errors, your system is fully functional! 🎉
 
 ### Common Issues
 
